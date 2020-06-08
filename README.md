@@ -7,4 +7,6 @@ Main capabilities:
 2. Implementation of self-consistent approximation for multi-phase composites as descibed by Berryman (1980)
 3. Implementation of differential effective medium theory
 
+-- Work in progress --
 
+ 
