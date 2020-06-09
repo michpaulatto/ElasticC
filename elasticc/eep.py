@@ -25,6 +25,7 @@ import numpy as np
 import math
 from . import utils
 from . import limits
+from scipy.integrate import quad
 
 zero=1e-12      # almost zero
 
@@ -77,7 +78,7 @@ def gassman(Kd,Gd,Km,Gm,Kl,Gl,p):
 #-------------------------------------
 def gassman_2(Kd,Gd,Km,Gm,Kl,Gl,p):
 # I follow here the equation published by Marion 1990 PhD Thesis
-# This should be equivalent to the one in gassman()
+# This should be equivalent to the one in gassman() -- need to test this
 # Km, Gm = moduli of solid matrix
 # Kl, Gl = moduli of fluid
 # Kd, Gd = moduli of dry composite
@@ -342,8 +343,9 @@ def mod_a(K1,K2,G1,G2,a2,c2a):
     Ksca[j]=Kd
     Gsca[j]=Gd
   return Ksca,Gsca
-  
-  
+
+
+
 #-------------------------------------
 def dem(K1,K2,G1,G2,a2,c2a):
 # Modified routine to apply the differential effective medium theory (DEM)
@@ -351,40 +353,57 @@ def dem(K1,K2,G1,G2,a2,c2a):
 # the liquid phase.
 # I have modified the "mixing" step to implement the DEM, i.e. I integrate 
 # the porosity from 0 to the desired value.
+# The integration is very crude and needs to be rewritten more robustly
 # K1, K2: bulk moduli of solid (phase 1) and liquid (phase 2) - scalars
 # G1, G2: shear moduli (scalar)
 # a2: aspect ratio of inclusions (scalar)
-# c2a: porosity - volume fractions of inclusions (these should be numpy arrays)
+# c2a: porosity - volume fractions of inclusions (this should be a numpy array)
 #
-  nm=np.shape(c2a)[0]
-  ns=10
+# Check that c2a is monotonic
+  try:
+    assert(np.all(c2a[1:] >= c2a[:-1]))
+  except:
+    print("Error - Porosity array not monotonic")
+  else:
+    nm=np.shape(c2a)[0]
 # Initialize arrays as simple average 
-  Kdem=np.linspace(K1,K2,num=nm)
-  Gdem=np.linspace(G1,G2,num=nm)
-  for j in range(nm):
-    c2=c2a[j]
-    dc=(c2a[1]-c2a[0])/ns
-    if j==0:
-      K0 = K1
-      G0 = G1
-    else:
-      K0 = Kdem[j-1]
-      G0 = Gdem[j-1]
-    for i in range(ns):
-      nu = (3.0*K0-2.0*G0)/2.0/(3.*K0+G0)
-# Coefficients for inclusions
-      P2=P(K0,K2,G0,G2,nu,a2)
-      Q2=Q(K0,K2,G0,G2,nu,a2)
-# Berryman's SC expression modified
-      dK = 1.0/(1.0-c2)*dc*(K2-K0)*P2
-      dG = 1.0/(1.0-c2)*dc*(G2-G0)*Q2
-      K0 = K0 + dK
-      G0 = G0 + dG
-    Kdem[j]=K0
-    Gdem[j]=G0
+    Kdem=np.linspace(K1,K2,num=nm)
+    Gdem=np.linspace(G1,G2,num=nm)
+# Define integrands
+    def integrandK(c,K,G,K2,G2,a):
+      nu = (3.0*K-2.0*G)/2.0/(3.*K+G)
+      P2=P(K,K2,G,G2,nu,a)
+      return P2/(1.0-c)*(K2-K)    
+    def integrandG(c,K,G,K2,G2,a):
+      nu = (3.0*K-2.0*G)/2.0/(3.*K+G)
+      Q2=Q(K,K2,G,G2,nu,a)
+      return Q2/(1.0-c)*(G2-G)
+# Loop over porosity array
+    for j in range(nm):
+      c2=c2a[j]
+      if j==0:
+        K0 = K1
+        G0 = G1
+        c0 = 0.0
+      else:
+        K0 = Kdem[j-1]
+        G0 = Gdem[j-1]
+        c0 = c2a[j-1]]
+# Need a more sophisticated way of choosing integration step
+      ns=10
+      dc=(c2-c0)/ns
+      for i in range(ns):
+# Berryman's DEM expression
+        dK = integrandK(c2,K0,G0,K2,G2,a2)*dc
+        dG = integrandG(c2,K0,G0,K2,G2,a2)*dc
+        K0 = K0 + dK
+        G0 = G0 + dG
+      Kdem[j]=K0
+      Gdem[j]=G0
+# Output moduli
   return Kdem,Gdem
-
-
+  
+  
 ############################  
 # Some functions used above
 

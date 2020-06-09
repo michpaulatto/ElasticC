@@ -76,7 +76,7 @@ pmax=1
 # Aspect ratio of two phases
 a2=1.0
 # Unrelaxed, high frequency limit
-a_Ku1,a_Gu1 = el.eep.dem(K1,K2,G1,G2,a2,c2)
+a_Ku1,a_Gu1 = el.eep.dem2(K1,K2,G1,G2,a2,c2)
 a_Vpu1=np.sqrt((a_Ku1+4.0/3.0*a_Gu1)/roe)
 a_Vsu1=np.sqrt(a_Gu1/roe)
 # Relaxed, low frequency limit
