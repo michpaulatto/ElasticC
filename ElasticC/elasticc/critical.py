@@ -9,7 +9,7 @@
 # Full terms at: https://creativecommons.org/licenses/by/4.0/
 
 
-import sca
+
 import numpy as np
 
 def mod_c(Km,Kl,Gm,Gl,phic,ca):

@@ -388,7 +388,7 @@ def dem(K1,K2,G1,G2,a2,c2a):
       else:
         K0 = Kdem[j-1]
         G0 = Gdem[j-1]
-        c0 = c2a[j-1]]
+        c0 = c2a[j-1]
 # Need a more sophisticated way of choosing integration step
       ns=10
       dc=(c2-c0)/ns
